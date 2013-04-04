@@ -8,6 +8,6 @@ version          '0.1.0'
 
 depends "windows" 
 depends "vcruntime"
-depends "php-windows-cookbook"
-depends "apache2-windows-cookbook"
+depends "php-windows"
+depends "apache2-windows"
 #need sql server driver for php here
