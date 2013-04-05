@@ -20,7 +20,8 @@
 
 default['drupal']['windows']['source'] = "http://www.acquia.com/sites/default/files/downloads/acquia-drupal/7.x/acquia-drupal-7.21.20.5959.zip"
 default['drupal']['windows']['checksum'] = "6dcb3a765e804f646908f99bd6cd45906959bd8908030c0256c1608de6b21cff"
-default['apache2']['windows']['path'] = "c:\\drupal"
+default['drupal']['windows']['sourcepath'] = "c:\\source"
+default['drupal']['windows']['path'] = "c:\\drupal"
 
 #######################################
 #

@@ -30,12 +30,25 @@ directory node['drupal']['windows']['path'] do
   action :create
 end
 
+directory node['drupal']['windows']['sourcepath'] do
+  action :create
+end
+
 #
 # TODO - find a way to clean up/fix the unzip'd path/directory
 #
-windows_zipfile node['drupal']['windows']['path'] do
+windows_zipfile node['drupal']['windows']['sourcepath'] do
   source distzipfile
   action :unzip
-  not_if {::File.exists?(::File.join(node['drupal']['windows']['path'],'index.php'))}
+  not_if {::File.exists?(::File.join(node['drupal']['windows']['sourcepath'],'index.php'))}
+end
+
+# now copy that file off to final destination
+#
+windows_batch "move_drupal" do
+    #xcopy C:\\source\\ruby-1.8.7-p352-i386-mingw32 C:\\ruby /e /y
+    code <<-EOH
+    xcopy #{node['drupal']['windows']['sourcepath']\\acquia-drupal-7.21.20} #{node['drupal']['windows']['path']} /e /y
+    EOH
 end
 
