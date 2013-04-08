@@ -48,7 +48,7 @@ end
 windows_batch "move_drupal" do
     #xcopy C:\\source\\ruby-1.8.7-p352-i386-mingw32 C:\\ruby /e /y
     code <<-EOH
-    xcopy #{node['drupal']['windows']['sourcepath']\\acquia-drupal-7.21.20} #{node['drupal']['windows']['path']} /e /y
+    xcopy #{node['drupal']['windows']['sourcepath']}\\acquia-drupal-7.21.20 #{node['drupal']['windows']['path']} /e /y
     EOH
 end
 
