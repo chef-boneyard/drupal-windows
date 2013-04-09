@@ -39,7 +39,7 @@ directory node['drupal']['windows']['path'] do
 end
 
 remote_file distzipfile do
-  source node['drupal']['windows']['source']
+  source node['drupal']['windows']['source']['url']
   checksum node['drupal']['windows']['source']['checksum']
   notifies :unzip, "windows_zipfile[#{sourcepath}]"
 end
@@ -55,7 +55,7 @@ end
 windows_batch "move_drupal" do
   action :nothing
   code <<-EOH
-  xcopy #{sourcepath}\\#{node['drupal']['windows']['source'].split("/").last[0,21]} #{node['drupal']['windows']['path']} /e /y
+  xcopy #{sourcepath}\\#{node['drupal']['windows']['source']['url'].split("/").last[0,21]} #{node['drupal']['windows']['path']} /e /y
   EOH
 end
 
