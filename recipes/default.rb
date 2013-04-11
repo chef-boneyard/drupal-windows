@@ -161,13 +161,20 @@ end
 # The SQLSRV extension is enabled by adding appropriate DLL file to
 # your PHP extension directory and the corresponding entry to the php.ini file
 # copy JUST the one we want over
+userini=::File.join(node['drupal']['windows']['path'], '.user.ini' )
+
 windows_batch "move_sqlserv-plugin" do
   #action :nothing
   #xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
   code <<-EOH
   xcopy #{sourcepath}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
   EOH
-  notifies :create, 'ruby_block[insert_line_phpini]'
+  notifies :create, "template[#{userini}]"
+end
+
+template userini do
+  source ".user.ini"
+  action :create
 end
 
 # append to
@@ -175,13 +182,13 @@ end
 # the line
 # extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}
 #
-ruby_block "insert_line_phpini" do
-  block do
-    file = Chef::Util::FileEdit.new("#{node['drupal']['php']['install_path']}\\php.ini")
-    file.insert_line_if_no_match("/extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}/", "extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}")
-    file.write_file
-  end
-end
+#ruby_block "insert_line_phpini" do
+#  block do
+#    file = Chef::Util::FileEdit.new("#{node['drupal']['php']['install_path']}\\php.ini")
+#    file.insert_line_if_no_match("/extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}/", "extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}")
+#    file.write_file
+#  end
+#end
 
 ############################################################
 ##sqlserv-plugin
