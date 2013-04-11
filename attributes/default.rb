@@ -2,8 +2,7 @@ default['drupal']['php']['install_path']="C:\\php"
 
 default['drupal']['windows']['source']['url'] = 'http://www.acquia.com/sites/default/files/downloads/acquia-drupal/7.x/acquia-drupal-7.21.20.5959.zip'
 default['drupal']['windows']['source']['checksum'] = '6dcb3a765e804f646908f99bd6cd45906959bd8908030c0256c1608de6b21cff'
-default['drupal']['windows']['path'] = "C:\\Apache2\\htdocs"
-#default['drupal']['windows']['path'] = "#{node['apache2']['windows']['path']}\\htdocs"
+default['drupal']['windows']['path'] = "#{node['apache2']['windows']['path']}\\htdocs"
 
 # azure php plugin  -- required by storage
 #default['drupal']['windows']['azure_php_sdk']['source'] = "d"
