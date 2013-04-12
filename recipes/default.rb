@@ -51,10 +51,11 @@ end
 
 #source_index_file=::File.join(sourcepath,'index.php')
 windows_zipfile sourcepath do
-  action :nothing
+  # until CHEF-4082
+  #action :nothing
   source distzipfile
   notifies :run, "windows_batch[move_drupal]", :immediately
-  #not_if {::File.exists?(source_index_file)}
+  not_if {::File.exists?(source_index_file)}
 end
 
 windows_batch "move_drupal" do
