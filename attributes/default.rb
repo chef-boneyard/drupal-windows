@@ -23,6 +23,7 @@ default['drupal']['windows']['azure_acs']['checksum'] = '71ff64922510bd40658844b
 default['drupal']['windows']['sqlserv-driver']['source'] = 'http://download.microsoft.com/download/C/D/B/CDB0A3BB-600E-42ED-8D5E-E4630C905371/SQLSRV30.EXE'
 default['drupal']['windows']['sqlserv-driver']['checksum'] = '6db35194c4e98f647cf8194f99904a55b3e21fd99acdf31bf789070a2b28202c'
 default['drupal']['windows']['database']['sqlserver']['driver']='php_sqlsrv_54_ts.dll'
+default['drupal']['windows']['database']['sqlserver']['pdo_driver']='php_pdo_sqlsrv_54_ts.dll'
 
 # sql server plugin for drupal
 default['drupal']['windows']['sqlserv-plugin']['source'] = 'http://ftp.drupal.org/files/projects/sqlsrv-7.x-1.2.zip'

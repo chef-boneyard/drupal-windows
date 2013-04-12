@@ -30,8 +30,8 @@ include_recipe 'php-windows'
 
 ###########################################################
 # drupal install
-sourcepath="#{Chef::Config[:file_cache_path]}/drupal"
-distzipfile = "#{sourcepath}/drupal-latest.zip"
+sourcepath=::File.join(Chef::Config[:file_cache_path], "drupal").gsub!('/', '\\')
+distzipfile = ::File.join(sourcepath,"drupal-latest.zip").gsub!('/', '\\')
 
 # source directory where we land and unroll our zip
 directory sourcepath do
@@ -60,9 +60,9 @@ windows_zipfile sourcepath do
 end
 
 windows_batch "move_drupal" do
-  #action :nothing
+  action :nothing
   code <<-EOH
-  xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['source']['url'].split("/").last[0,21]} #{node['drupal']['windows']['path']} /e /y
+  xcopy #{sourcepath}\\#{node['drupal']['windows']['source']['url'].split("/").last[0,21]} #{node['drupal']['windows']['path']} /e /y
   EOH
 end
 
@@ -90,7 +90,7 @@ windows_zipfile sourcepath do
 end
 
 windows_batch "move_azure_storage" do
-  #action :nothing
+  action :nothing
   code <<-EOH
   xcopy #{sourcepath.gsub!('/','\\')}\\azure #{node['drupal']['windows']['modules']['path']}\\azure /i /y
   EOH
@@ -121,7 +121,7 @@ windows_zipfile sourcepath do
 end
 
 windows_batch "move_azure_acs" do
-  #action :nothing
+  action :nothing
   code <<-EOH
   xcopy #{sourcepath.gsub!('/','\\')}\\azure_acs #{node['drupal']['windows']['modules']['path']}\\azure_acs /i /y
   EOH
@@ -149,9 +149,9 @@ end
 windows_batch "open-sqlserv-driver" do
   action :nothing
   code <<-EOH
-  #{distzipexe} /T:#{sourcepath.gsub!('/','\\')} /C /Q
+  #{distzipexe.gsub!('/', '\\')} /T:#{sourcepath.gsub!('/','\\')} /C /Q
   EOH
-  notifies :run, 'windows_batch[move_sqlserv-plugin]'
+  notifies :run, 'windows_batch[move-sqlserv-plugin]', :immediately
 end
 
 #
@@ -163,32 +163,18 @@ end
 # copy JUST the one we want over
 userini=::File.join(node['drupal']['windows']['path'], '.user.ini' )
 
-windows_batch "move_sqlserv-plugin" do
-  #action :nothing
-  #xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
+windows_batch "move-sqlserv-plugin" do
+  action :nothing
   code <<-EOH
-  xcopy #{sourcepath}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
+  xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
   EOH
-  notifies :create, "template[#{userini}]"
+  notifies :create, "template[#{userini}]", :immediately
 end
 
 template userini do
   source ".user.ini"
   action :create
 end
-
-# append to
-# #{node['drupal']['php']['install_path']}\\php.ini
-# the line
-# extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}
-#
-#ruby_block "insert_line_phpini" do
-#  block do
-#    file = Chef::Util::FileEdit.new("#{node['drupal']['php']['install_path']}\\php.ini")
-#    file.insert_line_if_no_match("/extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}/", "extension=#{node['drupal']['windows']['database']['sqlserver']['driver']}")
-#    file.write_file
-#  end
-#end
 
 ############################################################
 ##sqlserv-plugin
