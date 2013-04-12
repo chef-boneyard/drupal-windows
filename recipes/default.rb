@@ -17,10 +17,8 @@
 # limitations under the License.
 #
 
-include_recipe 'windows'
 include_recipe 'apache2-windows'
 include_recipe 'php-windows'
-
 
 ###########################################################
 # TODO
@@ -36,7 +34,6 @@ distzipfile = ::File.join(sourcepath,"drupal-latest.zip").gsub!('/', '\\')
 # source directory where we land and unroll our zip
 directory sourcepath do
   action :create
-  not_if {::File.directory?(sourcepath)}
 end
 
 # target dir
@@ -45,6 +42,7 @@ directory node['drupal']['windows']['path'] do
   not_if {::File.directory?(node['drupal']['windows']['path'])}
 end
 
+# distfile
 remote_file distzipfile do
   source node['drupal']['windows']['source']['url']
   checksum node['drupal']['windows']['source']['checksum']
@@ -213,12 +211,6 @@ end
 #
 # http://drush.ws/sites/default/files/attachments/Drush-5.8-2012-12-10-Installer-v1.0.20.msi
 #
-
-# Delete the stuff
-directory sourcepath do
-  recursive true
-  action :delete
-end
 
 
 
