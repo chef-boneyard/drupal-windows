@@ -32,14 +32,10 @@ sourcepath=::File.join(Chef::Config[:file_cache_path], "drupal")
 distzipfile = ::File.join(sourcepath,"drupal-latest.zip")
 
 # source directory where we land and unroll our zip
-directory sourcepath do
-  action :create
-end
+directory sourcepath
 
 # target dir
-directory node['drupal']['windows']['path'] do
-  action :create
-end
+directory node['drupal']['windows']['path']
 
 # distfile
 remote_file distzipfile do
@@ -50,11 +46,11 @@ end
 
 #source_index_file=::File.join(sourcepath,'index.php')
 windows_zipfile sourcepath do
-  # until CHEF-4082
-  #action :nothing
+  action :nothing
   source distzipfile
   notifies :run, "windows_batch[move_drupal]", :immediately
-  not_if {::File.exists?(source_index_file)}
+  # until CHEF-4082 we can't notify with '\' in the filepath
+  #not_if {::File.exists?(source_index_file)}
 end
 
 windows_batch "move_drupal" do
@@ -64,6 +60,13 @@ windows_batch "move_drupal" do
   EOH
 end
 
+node['drupal']['windows']['modules'].each do |dmodule, parms|
+  drupal_windows_module dmodule do
+    source parms['source']
+    checksum parms['checksum']
+    dir "#{node['drupal']['windows']['modules']['path']}/azure"
+  end
+end
 ###########################################################
 # Azure storage plugin
 sourcepath="#{Chef::Config[:file_cache_path]}/azure-storage"
@@ -94,7 +97,6 @@ windows_batch "move_azure_storage" do
   EOH
 end
 
-
 ###########################################################
 # Azure ACS plugin
 sourcepath="#{Chef::Config[:file_cache_path]}/acs-latest"
@@ -104,7 +106,7 @@ distzipfile = "#{sourcepath}/azure-acs-latest.zip"
 directory sourcepath do
   action :create
   not_if {::File.directory?(sourcepath)}
-  end
+end
 
 remote_file distzipfile do
   source node['drupal']['windows']['azure_acs']['source']
@@ -125,80 +127,36 @@ windows_batch "move_azure_acs" do
   EOH
 end
 
-###########################################################
-#  sql php drivers
-sourcepath="#{Chef::Config[:file_cache_path]}/drupal-sqlserv-driver"
-distzipexe = "#{sourcepath}/drupal-sqlserv-driver.exe"
-
-# source directory where we land and unroll our zip
-directory sourcepath do
-  action :create
-  not_if {::File.directory?(sourcepath)}
-end
-
-remote_file distzipexe do
-  source node['drupal']['windows']['sqlserv-driver']['source']
-  checksum node['drupal']['windows']['sqlserv-driver']['checksum']
-  #notifies :unzip, "windows_zipfile[#{sourcepath}]"
-  notifies :run, 'windows_batch[open-sqlserv-driver]', :immediately
-end
-
-# unroll and dump in same dir
-windows_batch "open-sqlserv-driver" do
-  action :nothing
-  code <<-EOH
-  #{distzipexe.gsub!('/', '\\')} /T:#{sourcepath.gsub!('/','\\')} /C /Q
-  EOH
-  notifies :run, 'windows_batch[move-sqlserv-plugin]', :immediately
-end
-
-#
-# TODO -- install
-# ref: http://www.php.net/manual/en/sqlsrv.installation.php
-# ref: http://drupal.org/node/1207972
-# The SQLSRV extension is enabled by adding appropriate DLL file to
-# your PHP extension directory and the corresponding entry to the php.ini file
-# copy JUST the one we want over
-userini=::File.join(node['drupal']['windows']['path'], '.user.ini' )
-
-windows_batch "move-sqlserv-plugin" do
-  action :nothing
-  code <<-EOH
-  xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
-  EOH
-  notifies :create, "template[#{userini}]", :immediately
-end
-
-template userini do
+template ::File.join(node['drupal']['windows']['path'], '.user.ini') do
   source ".user.ini"
-  action :create
+  notifies :restart, 'service[Apache2.2]'
 end
 
 ############################################################
-#sqlserv-plugin
-sourcepath="#{Chef::Config[:file_cache_path]}/drupal-sqlserv-plugin"
-distzipfile = "#{sourcepath}/drupal-sqlserv-plugin.zip"
+#sqlsrv-plugin
+sourcepath="#{Chef::Config[:file_cache_path]}/drupal-sqlsrv-plugin"
+distzipfile = "#{sourcepath}/drupal-sqlsrv-plugin.zip"
 
 # source directory where we land and unroll our zip
 directory sourcepath do
   action :create
   not_if {::File.directory?(sourcepath)}
-  end
+end
 
 remote_file distzipfile do
-  source node['drupal']['windows']['sqlserv-plugin']['source']
-  checksum node['drupal']['windows']['sqlserv-plugin']['checksum']
+  source node['drupal']['windows']['sqlsrv-plugin']['source']
+  checksum node['drupal']['windows']['sqlsrv-plugin']['checksum']
   notifies :unzip, "windows_zipfile[#{sourcepath}]", :immediately
 end
 
 windows_zipfile sourcepath do
   action :nothing
   source distzipfile
-  notifies :run, "windows_batch[move_sqlserv-plugin]", :immediately
+  notifies :run, "windows_batch[move_sqlsrv-plugin]", :immediately
 end
 
-windows_batch "move_sqlserv-plugin" do
-  #action :nothing
+windows_batch "move_sqlsrv-plugin" do
+  action :nothing
   code <<-EOH
   xcopy #{sourcepath.gsub!('/','\\')}\\sqlsrv #{node['drupal']['windows']['modules']['path']}\\sqlsrv /i /y
   EOH
@@ -216,7 +174,6 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
       :dbprefix        => node['drupal']['database']['prefix']
   )
 end
-
 
 #
 # install drush for windows
