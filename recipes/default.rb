@@ -60,7 +60,7 @@ end
 windows_batch "move_drupal" do
   action :nothing
   code <<-EOH
-  xcopy #{drupal_versioned_dir} #{node['drupal']['windows']['path']} /e /y
+  xcopy #{drupal_versioned_dir.gsub('/', '\\') } #{node['drupal']['windows']['path'].gsub('/', '\\') } /e /y
   EOH
 end
 
@@ -146,6 +146,7 @@ end
 windows_batch "open-sqlserv-driver" do
   action :nothing
   code "#{distzipexe.gsub!('/', '\\')} /T:#{sourcepath.gsub!('/','\\')} /C /Q"
+  not_if {::File.directory?(sourcepath)}
   notifies :run, 'windows_batch[move-sqlserv-plugin]', :immediately
 end
 
@@ -213,7 +214,9 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
   action :create
   variables(
       :driver          => 'sqlsrv',
-      :databasename    => node[:azure][:mssql][:databasename],
+      # need to magically gen this like in the wp cookbook
+      #:databasename    => node[:azure][:mssql][:databasename],
+      :databasename    => 'db00120',
       :username        => node[:azure][:mssql][:username],
       :password        => node[:azure][:mssql][:password],
       :host            => node[:azure][:mssql][:server],
