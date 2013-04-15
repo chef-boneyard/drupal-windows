@@ -48,19 +48,19 @@ remote_file distzipfile do
   notifies :unzip, "windows_zipfile[#{sourcepath}]", :immediately
 end
 
-#source_index_file=::File.join(sourcepath,'index.php')
+drupal_versioned_dir=::File.join(sourcepath, node['drupal']['windows']['source']['url'].split('/').last[0,21])
 windows_zipfile sourcepath do
   # until CHEF-4082
   #action :nothing
   source distzipfile
   notifies :run, "windows_batch[move_drupal]", :immediately
-  not_if {::File.exists?(source_index_file)}
+  not_if {::File.exists?(::File.join(drupal_versioned_dir,'index.php'))}
 end
 
 windows_batch "move_drupal" do
   action :nothing
   code <<-EOH
-  xcopy #{sourcepath}.gsub('/', '\\')\\#{node['drupal']['windows']['source']['url'].split("/").last[0,21]} #{node['drupal']['windows']['path']} /e /y
+  xcopy #{drupal_versioned_dir} #{node['drupal']['windows']['path']} /e /y
   EOH
 end
 
@@ -139,16 +139,13 @@ end
 remote_file distzipexe do
   source node['drupal']['windows']['sqlserv-driver']['source']
   checksum node['drupal']['windows']['sqlserv-driver']['checksum']
-  #notifies :unzip, "windows_zipfile[#{sourcepath}]"
   notifies :run, 'windows_batch[open-sqlserv-driver]', :immediately
 end
 
 # unroll and dump in same dir
 windows_batch "open-sqlserv-driver" do
   action :nothing
-  code <<-EOH
-  #{distzipexe.gsub!('/', '\\')} /T:#{sourcepath.gsub!('/','\\')} /C /Q
-  EOH
+  code "#{distzipexe.gsub!('/', '\\')} /T:#{sourcepath.gsub!('/','\\')} /C /Q"
   notifies :run, 'windows_batch[move-sqlserv-plugin]', :immediately
 end
 
@@ -159,20 +156,23 @@ end
 # The SQLSRV extension is enabled by adding appropriate DLL file to
 # your PHP extension directory and the corresponding entry to the php.ini file
 # copy JUST the one we want over
-userini=::File.join(node['drupal']['windows']['path'], '.user.ini' )
 
+#userini=::File.join(node['drupal']['windows']['path'], '.user.ini' )
+
+# don't think PDO is available to us here so remove it from both template/user.ini and here
 windows_batch "move-sqlserv-plugin" do
   action :nothing
   code <<-EOH
   xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
+  #xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['pdo_driver']} #{node['drupal']['php']['install_path']}\\ext /y
   EOH
-  notifies :create, "template[#{userini}]", :immediately
+#  notifies :create, "template[#{userini}]", :immediately
 end
 
-template userini do
-  source ".user.ini"
-  action :create
-end
+#template userini do
+#  source ".user.ini"
+#  action :create
+#end
 
 ############################################################
 #sqlserv-plugin
@@ -197,10 +197,13 @@ windows_zipfile sourcepath do
   notifies :run, "windows_batch[move_sqlserv-plugin]", :immediately
 end
 
+
+directory "#{node['drupal']['windows']['path']}\\sites\\all\\modules"
+
 windows_batch "move_sqlserv-plugin" do
   #action :nothing
   code <<-EOH
-  xcopy #{sourcepath.gsub!('/','\\')}\\sqlsrv #{node['drupal']['windows']['modules']['path']}\\sqlsrv /i /y
+  xcopy #{sourcepath.gsub!('/','\\')}\\sqlsrv  #{node['drupal']['windows']['path']}\\sites\\all\\modules\\sqlserv /i /y
   EOH
 end
 
@@ -209,14 +212,14 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
   source "settings.php.erb"
   action :create
   variables(
-      :database        => node[:azure][:mssql][:databasename],
-      :user            => node[:azure][:mssql][:username],
+      :driver          => 'sqlsrv',
+      :databasename    => node[:azure][:mssql][:databasename],
+      :username        => node[:azure][:mssql][:username],
       :password        => node[:azure][:mssql][:password],
       :host            => node[:azure][:mssql][:server],
       :dbprefix        => node['drupal']['database']['prefix']
   )
 end
-
 
 #
 # install drush for windows

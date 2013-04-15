@@ -1,8 +1,7 @@
 default['drupal']['database']['driver']='sqlsrv'
 default['drupal']['database']['prefix']='dru_'
 
-default['drupal']['php']['install_path']='C:\\php'
-
+default['drupal']['php']['install_path']="#{node['php']['windows']['path']}"
 default['drupal']['windows']['source']['url'] = 'http://www.acquia.com/sites/default/files/downloads/acquia-drupal/7.x/acquia-drupal-7.21.20.5959.zip'
 default['drupal']['windows']['source']['checksum'] = '6dcb3a765e804f646908f99bd6cd45906959bd8908030c0256c1608de6b21cff'
 default['drupal']['windows']['path'] = "#{node['apache2']['windows']['path']}\\htdocs"
