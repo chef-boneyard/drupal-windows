@@ -17,8 +17,10 @@
 # limitations under the License.
 #
 
+
 include_recipe 'apache2-windows'
 include_recipe 'php-windows'
+include_recipe 'drupal-windows::php-sqlserver-drivers'
 
 ###########################################################
 # TODO
@@ -70,10 +72,7 @@ sourcepath="#{Chef::Config[:file_cache_path]}/azure-storage"
 distzipfile = "#{sourcepath}/azure-storage-latest.zip"
 
 # source directory where we land and unroll our zip
-directory sourcepath do
-  action :create
-  not_if {::File.directory?(sourcepath)}
-end
+directory sourcepath
 
 remote_file distzipfile do
   source node['drupal']['windows']['azure_storage']['source']
@@ -88,9 +87,9 @@ windows_zipfile sourcepath do
 end
 
 windows_batch "move_azure_storage" do
-  action :nothing
+  #action :nothing
   code <<-EOH
-  xcopy #{sourcepath.gsub!('/','\\')}\\azure #{node['drupal']['windows']['modules']['path']}\\azure /i /y
+  xcopy #{sourcepath.gsub('/','\\')}\\azure #{node['drupal']['windows']['modules']['path'].gsub('/', '\\')}\\azure /i /y
   EOH
 end
 
@@ -121,59 +120,16 @@ end
 windows_batch "move_azure_acs" do
   action :nothing
   code <<-EOH
-  xcopy #{sourcepath.gsub!('/','\\')}\\azure_acs #{node['drupal']['windows']['modules']['path']}\\azure_acs /i /y
+  xcopy #{sourcepath.gsub('/','\\')}\\azure_acs #{node['drupal']['windows']['modules']['path'].gsub('/', '\\')}\\azure_acs /i /y
   EOH
-end
-
-###########################################################
-#  sql php drivers
-sourcepath="#{Chef::Config[:file_cache_path]}/drupal-sqlserv-driver"
-distzipexe = "#{sourcepath}/drupal-sqlserv-driver.exe"
-
-# source directory where we land and unroll our zip
-directory sourcepath do
-  action :create
-  not_if {::File.directory?(sourcepath)}
-end
-
-remote_file distzipexe do
-  source node['drupal']['windows']['sqlserv-driver']['source']
-  checksum node['drupal']['windows']['sqlserv-driver']['checksum']
-  notifies :run, 'windows_batch[open-sqlserv-driver]', :immediately
-end
-
-# unroll and dump in same dir
-windows_batch "open-sqlserv-driver" do
-  action :nothing
-  code "#{distzipexe.gsub!('/', '\\')} /T:#{sourcepath.gsub!('/','\\')} /C /Q"
-  not_if {::File.directory?(sourcepath)}
-  notifies :run, 'windows_batch[move-sqlserv-plugin]', :immediately
-end
-
-#
-# TODO -- install
-# ref: http://www.php.net/manual/en/sqlsrv.installation.php
-# ref: http://drupal.org/node/1207972
-# The SQLSRV extension is enabled by adding appropriate DLL file to
-# your PHP extension directory and the corresponding entry to the php.ini file
-# copy JUST the one we want over
-
-#userini=::File.join(node['drupal']['windows']['path'], '.user.ini' )
-
-# don't think PDO is available to us here so remove it from both template/user.ini and here
-windows_batch "move-sqlserv-plugin" do
-  action :nothing
-  code <<-EOH
-  xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['driver']} #{node['drupal']['php']['install_path']}\\ext /y
-  #xcopy #{sourcepath.gsub!('/','\\')}\\#{node['drupal']['windows']['database']['sqlserver']['pdo_driver']} #{node['drupal']['php']['install_path']}\\ext /y
-  EOH
-#  notifies :create, "template[#{userini}]", :immediately
 end
 
 #template userini do
 #  source ".user.ini"
 #  action :create
 #end
+
+
 
 ############################################################
 #sqlserv-plugin
@@ -199,12 +155,13 @@ windows_zipfile sourcepath do
 end
 
 
+#directory "#{node['drupal']['windows']['modules']['path']}"
 directory "#{node['drupal']['windows']['path']}\\sites\\all\\modules"
 
 windows_batch "move_sqlserv-plugin" do
   #action :nothing
   code <<-EOH
-  xcopy #{sourcepath.gsub!('/','\\')}\\sqlsrv  #{node['drupal']['windows']['path']}\\sites\\all\\modules\\sqlserv /i /y
+  xcopy #{sourcepath.gsub('/','\\')}\\sqlsrv  #{node['drupal']['windows']['path'].gsub('/', '\\')}\\sites\\all\\modules\\sqlserv /i /y
   EOH
 end
 
@@ -215,8 +172,7 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
   variables(
       :driver          => 'sqlsrv',
       # need to magically gen this like in the wp cookbook
-      #:databasename    => node[:azure][:mssql][:databasename],
-      :databasename    => 'db00120',
+      :databasename    => node[:azure][:mssql][:databasename],
       :username        => node[:azure][:mssql][:username],
       :password        => node[:azure][:mssql][:password],
       :host            => node[:azure][:mssql][:server],
@@ -230,6 +186,8 @@ end
 #
 # http://drush.ws/sites/default/files/attachments/Drush-5.8-2012-12-10-Installer-v1.0.20.msi
 #
-
+service 'Apache2.2' do
+  action :restart
+end
 
 
