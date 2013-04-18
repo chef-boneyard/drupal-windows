@@ -161,7 +161,8 @@ directory "#{node['drupal']['windows']['path']}\\sites\\all\\modules"
 windows_batch "move_sqlserv-plugin" do
   #action :nothing
   code <<-EOH
-  xcopy #{sourcepath.gsub('/','\\')}\\sqlsrv  #{node['drupal']['windows']['path'].gsub('/', '\\')}\\sites\\all\\modules\\sqlserv /i /y
+  xcopy #{sourcepath.gsub('/','\\')}\\sqlsrv  #{node['drupal']['windows']['path'].gsub('/', '\\')}\\sites\\all\\modules\\sqlsrv /i /y
+  xcopy #{sourcepath.gsub('/','\\')}\\sqlsrv\\sqlsrv  #{node['drupal']['windows']['path'].gsub('/', '\\')}\\includes\\database\\sqlsrv /i /y
   EOH
 end
 
@@ -176,7 +177,7 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
       :username        => node[:azure][:mssql][:username],
       :password        => node[:azure][:mssql][:password],
       :host            => node[:azure][:mssql][:server],
-      :dbprefix        => node['drupal']['database']['prefix']
+      :dbprefix        => (0...6).map{('a'..'z').to_a[rand(26)]}.join << '_'
   )
 end
 
