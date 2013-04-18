@@ -36,6 +36,7 @@ default['drupal']['windows']['database']['sqlserver']['driver']='php_sqlsrv_54_t
 default['drupal']['windows']['database']['sqlserver']['pdo_driver']='php_pdo_sqlsrv_54_ts.dll'
 
 # sql server plugin for drupal
-default['drupal']['windows']['sqlserv-plugin']['source'] = 'http://ftp.drupal.org/files/projects/sqlsrv-7.x-1.2.zip'
-default['drupal']['windows']['sqlserv-plugin']['checksum'] = '4fc7c5ad7ff23cd7cf63f4df4bcfe4f66343fa44875b2f1be9e97840c410a604'
+#default['drupal']['windows']['sqlserv-plugin']['source'] = 'http://ftp.drupal.org/files/projects/sqlsrv-7.x-1.2.zip'
+default['drupal']['windows']['sqlserv-plugin']['source'] = 'http://ftp.drupal.org/files/projects/sqlsrv-7.x-1.x-dev.zip'
+default['drupal']['windows']['sqlserv-plugin']['checksum'] = '47a21755029f3af3c31210eb5319c014f898007140ad1624e7c76674d4708e70'
 
