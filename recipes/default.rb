@@ -166,10 +166,21 @@ windows_batch "move_sqlserv-plugin" do
   EOH
 end
 
+# TODO -- this is terrible.  CHMOD -Rf 777 *, but was getting
+#   permission errors on re-run
+# `"ws::default line 169) had an error: Chef::Exceptions::InsufficientPermissions:
+# Cannot create directory[c:\Apache2/htdocs/sites/default/settings.php] at
+# c:\Apache2/htdocs/sites/default/settings.php due to insufficient permission
+directory "#{node['drupal']['windows']['path']}/sites/" do
+  rights :full_control, 'Everyone'
+  inherits true
+end
+
 template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
   #not_if { ::File.exists?("::File.join(node['wordpress']['windows']['path']['install'],'.finished") }
   source "settings.php.erb"
   action :create
+  mode   0755
   variables(
       :driver          => 'sqlsrv',
       # need to magically gen this like in the wp cookbook
@@ -180,6 +191,17 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
       :dbprefix        => (0...6).map{('a'..'z').to_a[rand(26)]}.join << '_'
   )
 end
+
+# swap in our php.ini file
+# Create php.ini from template
+template "#{node['php']['windows']['drive']}/#{node['php']['windows']['directory']}/php.ini" do
+  action :create
+  #notifies :restart, "service[Apache2.2]", :delayed
+  variables({
+    :database_extensions => node['drupal']['php']['extension']['init']
+  })
+end
+
 
 #
 # install drush for windows
