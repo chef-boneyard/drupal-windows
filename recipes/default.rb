@@ -20,6 +20,7 @@
 
 include_recipe 'apache2-windows'
 include_recipe 'php-windows'
+include_recipe 'vcruntime::vc10'
 include_recipe 'drupal-windows::php-sqlserver-drivers'
 
 node.set_unless['drupal']['database']['prefix'] = (0...6).map{('a'..'z').to_a[rand(26)]}.join << '_'
@@ -166,16 +167,16 @@ end
 # `"ws::default line 169) had an error: Chef::Exceptions::InsufficientPermissions:
 # Cannot create directory[c:\Apache2/htdocs/sites/default/settings.php] at
 # c:\Apache2/htdocs/sites/default/settings.php due to insufficient permission
-directory "#{node['drupal']['windows']['path']}/sites/" do
-  rights :full_control, 'Everyone'
+#directory "#{node['drupal']['windows']['path']}/sites/" do
+directory "#{node['drupal']['windows']['path']}/" do
+  rights :full_control, 'Administrators'
   inherits true
 end
 
 template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
   #not_if { ::File.exists?("::File.join(node['wordpress']['windows']['path']['install'],'.finished") }
-  source "settings.php.erb"
+  source 'settings.php.erb'
   action :create
-  mode   0755
   variables(
       :driver          => 'sqlsrv',
       # need to magically gen this like in the wp cookbook
@@ -187,9 +188,30 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
   )
 end
 
+# make sure chef profile dir exists
+#chef_profile_dir="#{node['drupal']['windows']['path']}/profiles/chef"
+#
+#directory chef_profile_dir do
+#  rights :full_control, 'Everyone'
+#  inherits true
+#end
+#
+#template chef_profile_dir do
+#  source 'chef.info.erb'
+#end
+#
+#template chef_profile_dir do
+#  source 'chef.profile.erb'
+#end
+#
+#template chef_profile_dir do
+#  source 'chef.install.erb'
+#end
+
 # swap in our php.ini file
 # Create php.ini from template
 template "#{node['php']['windows']['drive']}/#{node['php']['windows']['directory']}/php.ini" do
+  source 'php.ini.erb'
   action :create
   #notifies :restart, "service[Apache2.2]", :delayed
   variables({
