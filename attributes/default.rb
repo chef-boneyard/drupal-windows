@@ -24,7 +24,6 @@ default['drupal']['windows']['azure_acs']['checksum'] = '71ff64922510bd40658844b
 
 
 # MS SQLServer client
-
 default['drupal']['windows']['sqlserv-client']['source_x86']='http://download.microsoft.com/download/F/E/D/FEDB200F-DE2A-46D8-B661-D019DFE9D470/ENU/x86/sqlncli.msi'
 default['drupal']['windows']['sqlserv-client']['source_x64']= 'http://download.microsoft.com/download/F/E/D/FEDB200F-DE2A-46D8-B661-D019DFE9D470/ENU/x64/sqlncli.msi'
 default['drupal']['windows']['sqlserv-client']['default']= #{node['drupal']['windows']['sqlserv-client']['source_x64']}
@@ -36,7 +35,7 @@ default['drupal']['windows']['database']['sqlserver']['driver']='php_sqlsrv_54_t
 default['drupal']['windows']['database']['sqlserver']['pdo_driver']='php_pdo_sqlsrv_54_ts.dll'
 
 # sql server plugin for drupal
-#default['drupal']['windows']['sqlserv-plugin']['source'] = 'http://ftp.drupal.org/files/projects/sqlsrv-7.x-1.2.zip'
 default['drupal']['windows']['sqlserv-plugin']['source'] = 'http://ftp.drupal.org/files/projects/sqlsrv-7.x-1.x-dev.zip'
 default['drupal']['windows']['sqlserv-plugin']['checksum'] = '47a21755029f3af3c31210eb5319c014f898007140ad1624e7c76674d4708e70'
 
+default['drupal']['php']['extension']['init']=['php_pdo_sqlsrv_54_ts.dll','php_sqlsrv_54_ts.dll']

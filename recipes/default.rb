@@ -20,7 +20,10 @@
 
 include_recipe 'apache2-windows'
 include_recipe 'php-windows'
+include_recipe 'vcruntime::vc10'
 include_recipe 'drupal-windows::php-sqlserver-drivers'
+
+node.set_unless['drupal']['database']['prefix'] = (0...6).map{('a'..'z').to_a[rand(26)]}.join << '_'
 
 ###########################################################
 # TODO
@@ -124,13 +127,6 @@ windows_batch "move_azure_acs" do
   EOH
 end
 
-#template userini do
-#  source ".user.ini"
-#  action :create
-#end
-
-
-
 ############################################################
 #sqlserv-plugin
 sourcepath="#{Chef::Config[:file_cache_path]}/drupal-sqlserv-plugin"
@@ -166,9 +162,20 @@ windows_batch "move_sqlserv-plugin" do
   EOH
 end
 
+# TODO -- this is terrible.  CHMOD -Rf 777 *, but was getting
+#   permission errors on re-run
+# `"ws::default line 169) had an error: Chef::Exceptions::InsufficientPermissions:
+# Cannot create directory[c:\Apache2/htdocs/sites/default/settings.php] at
+# c:\Apache2/htdocs/sites/default/settings.php due to insufficient permission
+#directory "#{node['drupal']['windows']['path']}/sites/" do
+directory "#{node['drupal']['windows']['path']}/" do
+  rights :full_control, 'Administrators'
+  inherits true
+end
+
 template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
   #not_if { ::File.exists?("::File.join(node['wordpress']['windows']['path']['install'],'.finished") }
-  source "settings.php.erb"
+  source 'settings.php.erb'
   action :create
   variables(
       :driver          => 'sqlsrv',
@@ -177,16 +184,62 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
       :username        => node[:azure][:mssql][:username],
       :password        => node[:azure][:mssql][:password],
       :host            => node[:azure][:mssql][:server],
-      :dbprefix        => (0...6).map{('a'..'z').to_a[rand(26)]}.join << '_'
+      :dbprefix        => node['drupal']['database']['prefix']
   )
 end
+
+# make sure chef profile dir exists
+#chef_profile_dir="#{node['drupal']['windows']['path']}/profiles/chef"
+#
+#directory chef_profile_dir do
+#  rights :full_control, 'Everyone'
+#  inherits true
+#end
+#
+#template chef_profile_dir do
+#  source 'chef.info.erb'
+#end
+#
+#template chef_profile_dir do
+#  source 'chef.profile.erb'
+#end
+#
+#template chef_profile_dir do
+#  source 'chef.install.erb'
+#end
+
+# swap in our php.ini file
+# Create php.ini from template
+template "#{node['php']['windows']['drive']}/#{node['php']['windows']['directory']}/php.ini" do
+  source 'php.ini.erb'
+  action :create
+  #notifies :restart, "service[Apache2.2]", :delayed
+  variables({
+    :database_extensions => node['drupal']['php']['extension']['init']
+  })
+end
+
 
 #
 # install drush for windows
 # to get some command line goodness
+windows_package "Drush" do
+  source 'http://drush.ws/sites/default/files/attachments/Drush-5.8-2012-12-10-Installer-v1.0.20.msi'
+  action :install
+  not_if do
+    ::File.exists?('C:/Program Files (x86)/Drush/DrushEnv')
+  end
+end
+
 #
-# http://drush.ws/sites/default/files/attachments/Drush-5.8-2012-12-10-Installer-v1.0.20.msi
+# drupal cron
 #
+#windows_batch "create drupal cron" do
+#  code <<-EOH
+#  schtasks /create /tn "Drupal Cron Job" /tr " “C:\Program Files\Internet Explorer\iexplore.exe http://www.example.com/cron.php" /sc hourly
+#  EOH
+#end
+
 service 'Apache2.2' do
   action :restart
 end

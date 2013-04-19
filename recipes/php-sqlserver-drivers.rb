@@ -7,7 +7,7 @@
 windows_package "Microsoft SQL Server Native Client 11.0" do
   #source node['drupal']['windows']['sqlserv-client']['default']
   source 'http://download.microsoft.com/download/F/E/D/FEDB200F-DE2A-46D8-B661-D019DFE9D470/ENU/x64/sqlncli.msi'
-  options 'IACCEPTSQLNCLILICENCSETERMS=YES'
+  options 'IACCEPTSQLNCLILICENSETERMS=YES'
   action :install
   not_if do
     ::File.exists?('c:/Windows/System32/sqlncli11.dll')
