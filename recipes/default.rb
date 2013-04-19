@@ -22,6 +22,8 @@ include_recipe 'apache2-windows'
 include_recipe 'php-windows'
 include_recipe 'drupal-windows::php-sqlserver-drivers'
 
+node.set_unless['drupal']['database']['prefix'] = (0...6).map{('a'..'z').to_a[rand(26)]}.join << '_'
+
 ###########################################################
 # TODO
 # conditional install of all azure bits (acs, blob storage)
@@ -124,13 +126,6 @@ windows_batch "move_azure_acs" do
   EOH
 end
 
-#template userini do
-#  source ".user.ini"
-#  action :create
-#end
-
-
-
 ############################################################
 #sqlserv-plugin
 sourcepath="#{Chef::Config[:file_cache_path]}/drupal-sqlserv-plugin"
@@ -188,7 +183,7 @@ template "#{node['drupal']['windows']['path']}/sites/default/settings.php" do
       :username        => node[:azure][:mssql][:username],
       :password        => node[:azure][:mssql][:password],
       :host            => node[:azure][:mssql][:server],
-      :dbprefix        => (0...6).map{('a'..'z').to_a[rand(26)]}.join << '_'
+      :dbprefix        => node['drupal']['database']['prefix']
   )
 end
 
@@ -206,9 +201,23 @@ end
 #
 # install drush for windows
 # to get some command line goodness
+windows_package "Drush" do
+  source 'http://drush.ws/sites/default/files/attachments/Drush-5.8-2012-12-10-Installer-v1.0.20.msi'
+  action :install
+  not_if do
+    ::File.exists?('C:/Program Files (x86)/Drush/DrushEnv')
+  end
+end
+
 #
-# http://drush.ws/sites/default/files/attachments/Drush-5.8-2012-12-10-Installer-v1.0.20.msi
+# drupal cron
 #
+#windows_batch "create drupal cron" do
+#  code <<-EOH
+#  schtasks /create /tn "Drupal Cron Job" /tr " “C:\Program Files\Internet Explorer\iexplore.exe http://www.example.com/cron.php" /sc hourly
+#  EOH
+#end
+
 service 'Apache2.2' do
   action :restart
 end
